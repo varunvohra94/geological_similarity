@@ -5,7 +5,7 @@ from kfp.compiler import Compiler
     name='image-similarity',
     description='Unzip and Upload Images'
 )
-def preprocess(project,bucket_in,file_path,bucket_out,mode):
+def unzip_train_deploy(project,bucket_in,file_path,bucket_out,mode):
     #Step 1: Unzip the images and upload to GCS
     unzip_and_upload = dsl.ContainerOp(
         name='Unzip and Upload Images',
@@ -17,6 +17,19 @@ def preprocess(project,bucket_in,file_path,bucket_out,mode):
             '--bucket_out', bucket_out,
             '--mode',mode
         ],
-        file_outputs={'output':'/output.txt'}
+        file_outputs={'bucket':'/output.txt'}
     )
-Compiler().compile(preprocess,'mlp_image_similarity.tar.gz')
+
+    train = dsl.ContainerOp(
+        name='Train Model',
+        image='us.gcr.io/opportune-baton-267215/image-similarity-pipeline-train',
+        arguments=[
+            unzip_and_upload.outputs['bucket']
+        ],
+        file_outputs={'bucket':'/output.txt'}
+    )
+    train.set_memory_request('2G')
+    train.set_cpu_request('1')
+
+
+Compiler().compile(unzip_train_deploy,'mlp_image_similarity.tar.gz')

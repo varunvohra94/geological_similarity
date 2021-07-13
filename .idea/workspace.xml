@@ -3,10 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="3c2e56f6-2491-4568-bd43-b2e4304926f1" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/image_similarity/trainer/model.py" beforeDir="false" afterPath="$PROJECT_DIR$/image_similarity/trainer/model.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pipelines/train/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/pipelines/train/Dockerfile" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pipelines/train/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/pipelines/train/requirements.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pipelines/train/train.sh" beforeDir="false" afterPath="$PROJECT_DIR$/pipelines/train/train.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pipelines/pipeline/mlp_image_similarity.py" beforeDir="false" afterPath="$PROJECT_DIR$/pipelines/pipeline/mlp_image_similarity.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -56,7 +53,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1626160641056</updated>
-      <workItem from="1626160643741" duration="13685000" />
+      <workItem from="1626160643741" duration="15017000" />
     </task>
     <servers />
   </component>
