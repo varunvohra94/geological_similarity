@@ -15,7 +15,7 @@ TEST_METADATA=gs://${BUCKET}/metadata/test.csv
 CODEDIR=/aws_mle/geological_similarity/
 OUTDIR=gs://${BUCKET}/model
 
-pip install torch torchvision
+pip install -r ${CODEDIR}/pipelines/train/requirements.txt
 
 export PYTHONPATH=${CODEDIR}/image_similarity:${PYTHONPATH}
 

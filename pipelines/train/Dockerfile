@@ -4,8 +4,6 @@ RUN apt-get update && \
     apt-get purge -y --auto-remove && \
     rm -rf /var/lib/apt/lists/*
 
-RUN pip install numpy gcsfs pandas matplotlib tensorboard google-cloud-storage
-
 RUN mkdir /aws_mle && \
     cd /aws_mle && \
     git clone https://github.com/varunvohra94/geological_similarity.git
