@@ -6,3 +6,4 @@ matplotlib
 torchvision
 tensorboard
 google-cloud-storage
+scikit-learn

@@ -9,7 +9,7 @@ def unzip_train_deploy(project,bucket_in,file_path,bucket_out,mode):
     #Step 1: Unzip the images and upload to GCS
     unzip_and_upload = dsl.ContainerOp(
         name='Unzip and Upload Images',
-        image='us.gcr.io/opportune-baton-267215/image-similarity-pipeline-zip-to-gcs',
+        image='us.gcr.io/opportune-baton-267215/image-similarity-pipeline-upload-to-gcs',
         arguments=[
             '--project', project,
             '--bucket_in', bucket_in,
@@ -22,7 +22,7 @@ def unzip_train_deploy(project,bucket_in,file_path,bucket_out,mode):
 
     train = dsl.ContainerOp(
         name='Train Model',
-        image='us.gcr.io/opportune-baton-267215/image-similarity-pipeline-train',
+        image='us.gcr.io/opportune-baton-267215/image-similarity-pipeline-train-with-kubeflow',
         arguments=[
             unzip_and_upload.outputs['bucket']
         ],
@@ -32,4 +32,4 @@ def unzip_train_deploy(project,bucket_in,file_path,bucket_out,mode):
     train.set_cpu_request('1')
 
 
-Compiler().compile(unzip_train_deploy,'mlp_image_similarity.tar.gz')
+Compiler().compile(unzip_train_deploy,'aws_image_similarity.tar.gz')

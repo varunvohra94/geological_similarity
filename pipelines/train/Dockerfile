@@ -8,6 +8,6 @@ RUN mkdir /aws_mle && \
     cd /aws_mle && \
     git clone https://github.com/varunvohra94/geological_similarity.git
 
-COPY train.sh ./
+COPY train_on_gcp.sh ./
 
-ENTRYPOINT ["bash","./train.sh"]
+ENTRYPOINT ["bash","./train_on_gcp.sh"]
