@@ -166,6 +166,32 @@ def run_training(train_loader,test_loader):
     bucket = output_dir.split('/')[0]
     blob_name = output_dir.split('/')[1] + '/model/model_state_dict_path.pth'
     upload_blob(bucket,'model_state_dict_path.pth',blob_name)
+    return model
+
+def get_all_images(df_train,df_test):
+    df_train = pd.read_csv(df_train)
+    df_test = pd.read_csv(df_test)
+    df = pd.concat([df_train,df_test])
+    img_files = list(df['img_loc'])
+    df['img_loc'].to_csv(os.path.join())
+    return img_files
+
+def get_embedding_gcs(file, fs, model):
+    with fs.open(file,'rb') as f:
+        image = mpimg.imread(f,0)
+    image = test_transform(image)
+    image = image.unsqueeze(0)
+    model.eval()
+    with torch.no_grad():
+        emb, _ = model(image)
+    return emb.numpy()
+
+def save_embeddings(img_files,image_embeddings,out_dir,fs):
+    gcs_loc = os.path.join('gs://',out_dir,'model','embeddings')
+    pd.DataFrame(img_files,columns=['img_loc']).to_csv(gcs_loc + '/img_list.csv',index=False)
+    with open(gcs_loc+'/embeddings.npy','wb') as f:
+        np.save(f,image_embeddings)
+    return gcs_loc
 
 def train_model(output_dir):
     train_img_list,train_label_list = get_img_and_label_list(TRAIN_METADATA)
@@ -180,4 +206,13 @@ def train_model(output_dir):
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=BATCH_SIZE)
     test_loader = torch.utils.data.DataLoader(test_set, batch_size=BATCH_SIZE)
 
-    run_training(train_loader,test_loader)
+    model = run_training(train_loader,test_loader)
+    img_files = get_all_images(TRAIN_METADATA,TEST_METADATA)
+
+    fs = gcsfs.GCSFileSystem()
+    image_embeddings = np.zeros((len(img_files), 128))
+    for idx, file in enumerate(img_files):
+        image_embeddings[idx] = get_embedding_gcs(file, fs, model=model)
+
+    save_embeddings(img_files,image_embeddings,out_dir)
+
