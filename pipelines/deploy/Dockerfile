@@ -4,6 +4,6 @@ RUN mkdir /image_similarity && \
     cd image_similarity && \
     git clone https://github.com/varunvohra94/geological_similarity.git
 
-COPY train_on_gcp.sh ./
+COPY deploy.sh ./
 
-ENTRYPOINT ["bash","./train_on_gcp.sh"]
+ENTRYPOINT ["bash","./deploy.sh"]

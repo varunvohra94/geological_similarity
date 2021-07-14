@@ -4,7 +4,6 @@ import matplotlib.image as mpimg
 import torch
 import torch.nn as nn
 from torchvision import transforms
-import argparse
 import numpy as np
 import pandas as pd
 from google.cloud import storage

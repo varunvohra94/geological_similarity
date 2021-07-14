@@ -19,6 +19,7 @@ def unzip_train_deploy(project,bucket_in,file_path,bucket_out,mode):
         ],
         file_outputs={'bucket':'/output.txt'}
     )
+    unzip_and_upload.execution_options.caching_strategy.max_cache_staleness = "P30D"
 
     train = dsl.ContainerOp(
         name='Train Model',
@@ -28,8 +29,8 @@ def unzip_train_deploy(project,bucket_in,file_path,bucket_out,mode):
         ],
         file_outputs={'bucket':'/output.txt'}
     )
-    train.set_memory_request('2G')
-    train.set_cpu_request('1')
+    train.set_memory_request('5G')
+    train.set_cpu_request('2')
+    train.execution_options.caching_strategy.max_cache_staleness = "P30D"
 
-
-Compiler().compile(unzip_train_deploy,'aws_image_similarity.tar.gz')
+Compiler().compile(unzip_train_deploy,'image_similarity.tar.gz')

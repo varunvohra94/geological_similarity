@@ -2,7 +2,7 @@ import pandas as pd
 import gcsfs
 import numpy as np
 import matplotlib.image as mpimg
-
+import os
 from sklearn.metrics import accuracy_score
 
 import torch
@@ -122,7 +122,7 @@ def get_test_transform():
     ])
     return test_transform
 
-def run_training(train_loader,test_loader):
+def run_training(train_loader,test_loader,output_dir):
     model = CNN()
     loss_func = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
@@ -162,10 +162,10 @@ def run_training(train_loader,test_loader):
               '  Test accuracy:', round(avg_test_accuracy_epoch, 4)
               )
     writer.flush()
-    torch.save(model.state_dict(),'model_state_dict_path.pth')
+    torch.save(model,'model.pt')
     bucket = output_dir.split('/')[0]
-    blob_name = output_dir.split('/')[1] + '/model/model_state_dict_path.pth'
-    upload_blob(bucket,'model_state_dict_path.pth',blob_name)
+    blob_name = output_dir.split('/')[1] + '/model/model.pt'
+    upload_blob(bucket,'model.pt',blob_name)
     return model
 
 def get_all_images(df_train,df_test):
@@ -176,7 +176,7 @@ def get_all_images(df_train,df_test):
     df['img_loc'].to_csv(os.path.join())
     return img_files
 
-def get_embedding_gcs(file, fs, model):
+def get_embedding_gcs(file, fs, model,test_transform):
     with fs.open(file,'rb') as f:
         image = mpimg.imread(f,0)
     image = test_transform(image)
@@ -188,8 +188,8 @@ def get_embedding_gcs(file, fs, model):
 
 def save_embeddings(img_files,image_embeddings,out_dir,fs):
     gcs_loc = os.path.join('gs://',out_dir,'model','embeddings')
-    pd.DataFrame(img_files,columns=['img_loc']).to_csv(gcs_loc + '/img_list.csv',index=False)
-    with open(gcs_loc+'/embeddings.npy','wb') as f:
+    pd.DataFrame(img_files,columns=['img_loc']).to_csv(os.path.join(gcs_loc,'img_list.csv'),index=False)
+    with fs.open(os.path.join(gcs_loc,'embeddings.npy'),'wb') as f:
         np.save(f,image_embeddings)
     return gcs_loc
 
@@ -206,13 +206,13 @@ def train_model(output_dir):
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=BATCH_SIZE)
     test_loader = torch.utils.data.DataLoader(test_set, batch_size=BATCH_SIZE)
 
-    model = run_training(train_loader,test_loader)
+    model = run_training(train_loader,test_loader,output_dir)
     img_files = get_all_images(TRAIN_METADATA,TEST_METADATA)
 
     fs = gcsfs.GCSFileSystem()
     image_embeddings = np.zeros((len(img_files), 128))
     for idx, file in enumerate(img_files):
-        image_embeddings[idx] = get_embedding_gcs(file, fs, model=model)
+        image_embeddings[idx] = get_embedding_gcs(file, fs, model=model,test_transform)
 
-    save_embeddings(img_files,image_embeddings,out_dir)
+    save_embeddings(img_files,image_embeddings,output_dir)
 
