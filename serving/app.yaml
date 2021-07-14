@@ -1,7 +1,6 @@
-service: streamlit-app
 runtime: custom
 env: flex
 manual_scaling:
-  instances: 3
+  instances: 1
 env_variables:
   BUCKET: 'geological_similarity_data/13-07-2021'

@@ -212,7 +212,7 @@ def train_model(output_dir):
     fs = gcsfs.GCSFileSystem()
     image_embeddings = np.zeros((len(img_files), 128))
     for idx, file in enumerate(img_files):
-        image_embeddings[idx] = get_embedding_gcs(file, fs, model=model,test_transform)
+        image_embeddings[idx] = get_embedding_gcs(file, fs, model, test_transform)
 
     save_embeddings(img_files,image_embeddings,output_dir)
 

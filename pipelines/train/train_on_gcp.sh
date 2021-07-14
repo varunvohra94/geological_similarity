@@ -19,10 +19,23 @@ OUTDIR=${BUCKET}
 
 
 
-echo $OUTDIR $REGION
 
+JOBNAME=geological_similarity_$(date -u +%y%m%d_%H%M%S)
+echo $OUTDIR $REGION $JOBNAME
 
-
+gcloud ai-platform jobs submit training $JOBNAME \
+  --region=$REGION \
+  --module-name=trainer.task \
+  --package-path=${CODEDIR}/image_similarity/trainer \
+  --job-dir=$OUTDIR \
+  --staging-bucket=gs://$BUCKET \
+  --scale-tier=PREMIUM_1 \
+  --runtime-version=$RUNTIME_VERSION \
+  --python-version=3.7 \
+  -- \
+  --train_metadata=${TRAIN_METADATA} \
+  --output_dir=${OUTDIR} \
+  --test_metadata=${TEST_METADATA}
 
 #pip install -r ${CODEDIR}/pipelines/train/requirements.txt
 #
