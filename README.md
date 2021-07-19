@@ -51,7 +51,7 @@ The train-model component takes as input the output of the last component (unzip
 
 The deploy-app component takes as input the output of the train-model component (train-model) which is the bucket where the model and embeddings are stored. The deploy-app then builds an app on GCP App Engine 
 
-### prediction Results:
+### Prediction Results:
 
 The prediction results are available at 
 https://opportune-baton-267215.uc.r.appspot.com/
