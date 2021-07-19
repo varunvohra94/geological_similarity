@@ -7,22 +7,12 @@ from . import model
 if __name__=='__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--train_metadata',
+        '--bucket',
         help='GCS Path to Training file metadata',
         required=True
     )
     parser.add_argument(
-        '--test_metadata',
-        help='GCS Path to Testing file metadata',
-        required=True
-    )
-    parser.add_argument(
-        '--output_dir',
-        help = 'GCS Location to write checkpoints and export models',
-        required=True
-    )
-    parser.add_argument(
-        '--job_dir',
+        '--job-dir',
         default='not_needed'
     )
     parser.add_argument(
@@ -59,13 +49,11 @@ if __name__=='__main__':
     args = parser.parse_args()
     arguments = args.__dict__
 
-    output_dir = arguments.pop('output_dir')
-    model.TRAIN_METADATA = arguments.pop('train_metadata')
-    model.TEST_METADATA = arguments.pop('test_metadata')
+    bucket = arguments.pop('bucket')
     model.NUM_EPOCHS = arguments.pop('num_epochs')
     model.BATCH_SIZE = arguments.pop('batch_size')
     model.COV_NN_SIZE = arguments.pop('nn_size')
     model.EMBED_SIZE = arguments.pop('embed_size')
     model.LEARNING_RATE = arguments.pop('learning_rate')
 
-    model.train_model(output_dir)
+    model.train_model(bucket)

@@ -3,16 +3,16 @@ import gcsfs
 import numpy as np
 import matplotlib.image as mpimg
 import os
+
 from sklearn.metrics import accuracy_score
+from google.cloud import storage
 
 import torch
 import torch.nn as nn
 import torchvision.transforms as transforms
 from torch.utils.data import Dataset, DataLoader
 from torch.utils.tensorboard import SummaryWriter
-
-TRAIN_METADATA = None
-TEST_METADATA = None
+from . import utils
 
 NUM_EPOCHS = 30
 BATCH_SIZE = 1024
@@ -54,73 +54,88 @@ class CNN(nn.Module):
 class GeologicalDataset(Dataset):
     """Face Landmarks dataset."""
 
-    def __init__(self, img_names, labels, transform=None):
+    def __init__(self, step, transform=None):
+        """
+        Args:
+            root_dir (string): Directory with all the images.
+            transform (callable, optional): Optional transform to be applied
+                on a sample.
+        """
+        self.step = step
         self.transform = transform
-        self.img_names = img_names
-        self.labels = labels
-        self.fs = gcsfs.GCSFileSystem()
+
+        img_names_list = [os.path.join(path, name)
+                          for path, _, files in os.walk(os.path.join(os.getcwd(), self.step))
+                          for name in files]
+
+        labels = os.listdir(os.path.join(os.getcwd(), self.step))
+        labels = sorted(labels)
+        labels_to_idx = {k: v for v, k in enumerate(labels)}
+
+        labels_list = [labels_to_idx[os.path.join(path, name).split('/')[-2]]
+                       for path, _, files in os.walk(os.path.join(os.getcwd(), self.step))
+                       for name in files
+                       ]
+
+        self.img_names = img_names_list
+        self.labels = labels_list
 
     def __len__(self):
         return len(self.img_names)
 
     def __getitem__(self, idx):
-        with self.fs.open(self.img_names[idx]) as f:
-            image = mpimg.imread(f,0)
+        image = mpimg.imread(self.img_names[idx])
         label = self.labels[idx]
         if self.transform:
             image = self.transform(image)
 
         return image, label
 
-from google.cloud import storage
 
+# def upload_blob(bucket_name, source_file_name, destination_blob_name):
+#     """Uploads a file to the bucket."""
+#     # The ID of your GCS bucket
+#     # bucket_name = "your-bucket-name"
+#     # The path to your file to upload
+#     # source_file_name = "local/path/to/file"
+#     # The ID of your GCS object
+#     # destination_blob_name = "storage-object-name"
+#
+#     storage_client = storage.Client()
+#     bucket = storage_client.bucket(bucket_name)
+#     blob = bucket.blob(destination_blob_name)
+#
+#     blob.upload_from_filename(source_file_name)
+#
+#     print(
+#         "File {} uploaded to {}.".format(
+#             source_file_name, destination_blob_name
+#         )
+#     )
 
-def upload_blob(bucket_name, source_file_name, destination_blob_name):
-    """Uploads a file to the bucket."""
-    # The ID of your GCS bucket
-    # bucket_name = "your-bucket-name"
-    # The path to your file to upload
-    # source_file_name = "local/path/to/file"
-    # The ID of your GCS object
-    # destination_blob_name = "storage-object-name"
+# def get_img_and_label_list(metadata):
+#     df = pd.read_csv(metadata)
+#     df['_label'] = pd.factorize(df.label)[0]
+#     return list(df['img_loc']),list(df['_label'])
 
-    storage_client = storage.Client()
-    bucket = storage_client.bucket(bucket_name)
-    blob = bucket.blob(destination_blob_name)
-
-    blob.upload_from_filename(source_file_name)
-
-    print(
-        "File {} uploaded to {}.".format(
-            source_file_name, destination_blob_name
-        )
-    )
-
-def get_img_and_label_list(metadata):
-    df = pd.read_csv(metadata)
-    df['_label'] = pd.factorize(df.label)[0]
-    return list(df['img_loc']),list(df['_label'])
-
-def get_train_transform():
-    train_transform = transforms.Compose([
-        transforms.ToPILImage(),
-        transforms.RandomHorizontalFlip(0.5),
-        transforms.RandomVerticalFlip(0.5),
-        # transforms.RandomRotation(degrees=(0,360)),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.5080, 0.5196, 0.5195],
-                             std=[0.1852, 0.1995, 0.2193])
-    ])
-    return train_transform
-
-def get_test_transform():
-    test_transform = transforms.Compose([
-        transforms.ToPILImage(),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.5080, 0.5196, 0.5195],
-                             std=[0.1852, 0.1995, 0.2193])
-    ])
-    return test_transform
+# def get_transform(step):
+#     if step == 'Train':
+#         transform = transforms.Compose([
+#             transforms.ToPILImage(),
+#             transforms.RandomHorizontalFlip(0.5),
+#             transforms.RandomVerticalFlip(0.5),
+#             transforms.ToTensor(),
+#             transforms.Normalize(mean=[0.5080, 0.5196, 0.5195],
+#                                  std=[0.1852, 0.1995, 0.2193])
+#         ])
+#     else:
+#         transform = transforms.Compose([
+#             transforms.ToPILImage(),
+#             transforms.ToTensor(),
+#             transforms.Normalize(mean=[0.5080, 0.5196, 0.5195],
+#                              std=[0.1852, 0.1995, 0.2193])
+#         ])
+#     return transform
 
 def run_training(train_loader,test_loader,output_dir):
     model = CNN()
@@ -162,57 +177,104 @@ def run_training(train_loader,test_loader,output_dir):
               '  Test accuracy:', round(avg_test_accuracy_epoch, 4)
               )
     writer.flush()
-    torch.save(model,'model.pt')
-    bucket = output_dir.split('/')[0]
-    blob_name = output_dir.split('/')[1] + '/model/model.pt'
-    upload_blob(bucket,'model.pt',blob_name)
-    return model
+    local_model_path = 'model.pt'
+    torch.save(model, local_model_path)
+    # upload_model(local_model_path, output_dir)
+    # bucket = output_dir.split('/')[0]
+    # blob_name = output_dir.split('/')[1] + '/model/model.pt'
+    # upload_blob(bucket,'model.pt',blob_name)
+    return model, local_model_path
 
-def get_all_images(df_train,df_test):
-    df_train = pd.read_csv(df_train)
-    df_test = pd.read_csv(df_test)
-    df = pd.concat([df_train,df_test])
-    img_files = list(df['img_loc'])
-    df['img_loc'].to_csv(os.path.join())
-    return img_files
+# def upload_model(path, output_dir):
+#     bucket = output_dir.split('/')[0]
+#     # blob_name = output_dir.split('/')[1] + '/model/model.pt'
+#     blob_name = os.path.join(os.path.join(output_dir.split('/')[1], 'model'),path)
+#     upload_blob(bucket,path,blob_name)
 
-def get_embedding_gcs(file, fs, model,test_transform):
-    with fs.open(file,'rb') as f:
-        image = mpimg.imread(f,0)
-    image = test_transform(image)
+# def get_all_images(df_train,df_test):
+#     df_train = pd.read_csv(df_train)
+#     df_test = pd.read_csv(df_test)
+#     df = pd.concat([df_train,df_test])
+#     img_files = list(df['img_loc'])
+#     df['img_loc'].to_csv(os.path.join())
+#     return img_files
+#
+# def get_embedding_gcs(file, fs, model,test_transform):
+#     with fs.open(file,'rb') as f:
+#         image = mpimg.imread(f,0)
+#     image = test_transform(image)
+#     image = image.unsqueeze(0)
+#     model.eval()
+#     with torch.no_grad():
+#         emb, _ = model(image)
+#     return emb.numpy()
+
+def get_embedding(file, model, transform):
+    image = mpimg.imread(file)
+    image = transform(image)
     image = image.unsqueeze(0)
     model.eval()
     with torch.no_grad():
         emb, _ = model(image)
     return emb.numpy()
 
-def save_embeddings(img_files,image_embeddings,out_dir,fs):
-    gcs_loc = os.path.join('gs://',out_dir,'model','embeddings')
-    pd.DataFrame(img_files,columns=['img_loc']).to_csv(os.path.join(gcs_loc,'img_list.csv'),index=False)
-    with fs.open(os.path.join(gcs_loc,'embeddings.npy'),'wb') as f:
-        np.save(f,image_embeddings)
-    return gcs_loc
+# def save_embeddings(img_files,image_embeddings,output_dir):
+#     fs = gcsfs.GCSFileSystem()
+#     gcs_loc = os.path.join('gs://',output_dir,'model','embeddings')
+#     img_files = [os.path.join('gs://',
+#                               output_dir,
+#                               i.split('/')[-3],
+#                               i.split('/')[-2],i.split('/')[-1])
+#                  for i in img_files]
+#     pd.DataFrame(img_files, columns=['img_loc']).to_csv(os.path.join(gcs_loc,'img_list.csv'),index=False)
+#     with fs.open(os.path.join(gcs_loc,'embeddings.npy'),'wb') as f:
+#         np.save(f,image_embeddings)
+#     return gcs_loc
+#
+# def download_images(path,step):
+#     bucket = path.split('/',1)[0]
+#     prefix = os.path.join(path.split('/',1)[1],step)
+#     storage_client = storage.Client()
+#     bucket = storage_client.get_bucket(bucket)
+#     blobs = bucket.list_blobs(prefix=prefix)
+#     for blob in blobs:
+#         class_name = blob.name.rsplit('/',2)[1]
+#         file_name = blob.name.rsplit('/',1)[1]
+#         try:
+#             os.makedirs(os.path.join(step,class_name))
+#         except:
+#             pass
+#         blob.download_to_filename(os.path.join(os.path.join(step,class_name),file_name))
 
 def train_model(output_dir):
-    train_img_list,train_label_list = get_img_and_label_list(TRAIN_METADATA)
-    test_img_list,test_label_list = get_img_and_label_list(TEST_METADATA)
+    datasets = {}
+    data_loaders = {}
+    img_loc_step = {}
+    transform_step = {}
+    for step in ['Train','Test']:
+        utils.download_images(output_dir,step)
+        transform_step[step] = utils.get_transform(step)
+        img_loc_step[step] = [os.path.join(path, name)
+                              for path, _, files in os.walk(os.path.join(os.getcwd(),step))
+                              for name in files]
+        datasets[step] = GeologicalDataset(step,transform_step[step])
+        data_loaders[step] = torch.utils.data.DataLoader(datasets[step],batch_size=BATCH_SIZE)
 
-    train_transform = get_train_transform()
-    test_transform = get_test_transform()
 
-    train_set = GeologicalDataset(train_img_list,train_label_list,train_transform)
-    test_set = GeologicalDataset(test_img_list,test_label_list,test_transform)
+        # train_set = GeologicalDataset(train_img_list,train_label_list,train_transform)
+        # test_set = GeologicalDataset(test_img_list,test_label_list,test_transform)
+        #
+        # train_loader = torch.utils.data.DataLoader(train_set, batch_size=BATCH_SIZE)
+        # test_loader = torch.utils.data.DataLoader(test_set, batch_size=BATCH_SIZE)
 
-    train_loader = torch.utils.data.DataLoader(train_set, batch_size=BATCH_SIZE)
-    test_loader = torch.utils.data.DataLoader(test_set, batch_size=BATCH_SIZE)
-
-    model = run_training(train_loader,test_loader,output_dir)
-    img_files = get_all_images(TRAIN_METADATA,TEST_METADATA)
-
-    fs = gcsfs.GCSFileSystem()
+    model, local_model_path = run_training(data_loaders['Train'], data_loaders['Test'], output_dir)
+    utils.upload_model(local_model_path, output_dir)
+    # img_files = get_all_images(TRAIN_METADATA,TEST_METADATA)
+    img_files = sum(img_loc_step.values(), [])
+    # fs = gcsfs.GCSFileSystem()
     image_embeddings = np.zeros((len(img_files), 128))
     for idx, file in enumerate(img_files):
-        image_embeddings[idx] = get_embedding_gcs(file, fs, model, test_transform)
+        image_embeddings[idx] = get_embedding(file, model, transform_step['Test'])
 
-    save_embeddings(img_files,image_embeddings,output_dir)
+    utils.save_embeddings(img_files, image_embeddings, output_dir)
 
