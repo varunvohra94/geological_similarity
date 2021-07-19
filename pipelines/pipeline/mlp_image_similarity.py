@@ -9,7 +9,7 @@ def unzip_train_deploy(project,bucket_in,file_path,bucket_out,mode):
     #Step 1: Unzip the images and upload to GCS
     unzip_and_upload = dsl.ContainerOp(
         name='Unzip and Upload Images',
-        image='us.gcr.io/opportune-baton-267215/image-similarity-pipeline-upload-to-gcs',
+        image='us.gcr.io/opportune-baton-267215/geological-similarity-pipeline-zip-to-gcs',
         arguments=[
             '--project', project,
             '--bucket_in', bucket_in,
@@ -22,7 +22,7 @@ def unzip_train_deploy(project,bucket_in,file_path,bucket_out,mode):
 
     train = dsl.ContainerOp(
         name='Train Model',
-        image='us.gcr.io/opportune-baton-267215/image-similarity-pipeline-train-with-kubeflow',
+        image='us.gcr.io/opportune-baton-267215/geological-similarity-pipeline-train',
         arguments=[
             unzip_and_upload.outputs['bucket']
         ],
@@ -31,7 +31,7 @@ def unzip_train_deploy(project,bucket_in,file_path,bucket_out,mode):
 
     deploy = dsl.ContainerOp(
         name='Deploy App',
-        image='us.gcr.io/opportune-baton-267215/app-deploy',
+        image='us.gcr.io/opportune-baton-267215/geological-similarity-pipeline-deploy',
         arguments=[
             train.outputs['bucket']
         ],

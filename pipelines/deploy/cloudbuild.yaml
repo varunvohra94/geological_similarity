@@ -1,6 +1,6 @@
 steps:
     - name: 'gcr.io/cloud-builders/docker'
       dir:  'geological_similarity/pipelines/deploy'   # remove-for-manual
-      args: [ 'build', '-t', 'us.gcr.io/opportune-baton-267215/app-deploy:latest', '.' ]
+      args: [ 'build', '-t', 'us.gcr.io/opportune-baton-267215/geological-similarity-pipeline-deploy:latest', '.' ]
 images:
-    - 'us.gcr.io/opportune-baton-267215/app-deploy:latest'
+    - 'us.gcr.io/opportune-baton-267215/geological-similarity-pipeline-deploy'

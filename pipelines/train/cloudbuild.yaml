@@ -1,6 +1,6 @@
 steps:
     - name: 'gcr.io/cloud-builders/docker'
       dir:  'geological_similarity/pipelines/train'   # remove-for-manual
-      args: [ 'build', '-t', 'us.gcr.io/opportune-baton-267215/image-similarity-pipeline-train-with-kubeflow', '.' ]
+      args: [ 'build', '-t', 'us.gcr.io/opportune-baton-267215/geological-similarity-pipeline-train', '.' ]
 images:
-    - 'us.gcr.io/opportune-baton-267215/image-similarity-pipeline-train-with-kubeflow'
+    - 'us.gcr.io/opportune-baton-267215/geological-similarity-pipeline-train'
