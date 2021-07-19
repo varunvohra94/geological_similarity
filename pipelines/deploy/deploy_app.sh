@@ -7,7 +7,7 @@ fi
 
 export BUCKET=$1
 
-cd /image_similarity/geological_similarity/serving
+cd /similarities/geological_similarity/serving
 
 gcloud app deploy
 

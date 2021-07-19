@@ -8,6 +8,10 @@ def randomize_files(file_list):
     return file_list
 
 def get_training_and_testing_sets(file_list,split):
+    """
+    Function to split the images into train and test set
+    :param file_list: list of
+    """
     from math import floor
     split_index = floor(len(file_list) * split)
     training = file_list[:split_index]
@@ -15,7 +19,11 @@ def get_training_and_testing_sets(file_list,split):
     return training, testing
 
 def create_bucket_class_location(bucket_name,project):
-    """Create a new bucket in specific location with storage class"""
+    """
+    Create a new bucket in specific location with storage class
+    :param bucket_name: Name of bucket to be created
+    :param project: GCP Project to create bucket in
+    """
     from google.cloud import storage
 
     storage_client = storage.Client(project=project)
@@ -26,10 +34,20 @@ def create_bucket_class_location(bucket_name,project):
     return
 
 def get_date_today():
+    """
+    Function to get date at runtime
+    """
     from datetime import date
     return date.today().strftime('%d-%m-%Y')
 
 def write_csv_to_gcs(data,bucket_out,today,is_train=True):
+    """
+    Function to write image location mtadata to GCP
+    :param data: metadata to write to gcs
+    :param bucket_out: bucket name to write metadata
+    :param today: runtime date
+    :param is_train: Boolean flag to upload either Train or Test metadata
+    """
     import pandas as pd
     import gcsfs
     import os
@@ -43,6 +61,16 @@ def write_csv_to_gcs(data,bucket_out,today,is_train=True):
         df.to_csv(gcs_loc, index=False)
 
 def zipextract(in_test_mode,project,bucket_in,file_path,bucket_out,image_type,split):
+    """
+    :param in_test_mode: Boolean values (If True only extracts 100 train images and 30 test images)
+    :param project: GCP Project to run on
+    :param bucket_in: Bucket name containing .zip folder
+    :param: file_path: Prefix for .zip folder
+    :param: bucket_out: Bucket to save the extracted images at
+    :image_type: Type of images
+    :split: Train or Test Split
+    :return: % Split between train and testing data
+    """
     import os
     import io
     import json
@@ -124,7 +152,7 @@ if __name__ == '__main__':
                         )
     parser.add_argument('--train_split',
                         type=float,
-                        default=0.7)
+                        default=0.9)
     parser.add_argument('--mode',
                         type=str,
                         default='test',

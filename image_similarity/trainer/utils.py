@@ -40,14 +40,6 @@ def get_transform(step):
     return transform
 
 def upload_blob(bucket_name, source_file_name, destination_blob_name):
-    """Uploads a file to the bucket."""
-    # The ID of your GCS bucket
-    # bucket_name = "your-bucket-name"
-    # The path to your file to upload
-    # source_file_name = "local/path/to/file"
-    # The ID of your GCS object
-    # destination_blob_name = "storage-object-name"
-
     storage_client = storage.Client()
     bucket = storage_client.bucket(bucket_name)
     blob = bucket.blob(destination_blob_name)
@@ -62,30 +54,18 @@ def upload_blob(bucket_name, source_file_name, destination_blob_name):
 
 def upload_model(path, output_dir):
     bucket = output_dir.split('/')[0]
-    # blob_name = output_dir.split('/')[1] + '/model/model.pt'
     blob_name = os.path.join(output_dir.split('/')[1], 'model', path)
     upload_blob(bucket, path, blob_name)
 
-def save_embeddings(img_files,image_embeddings,output_dir):
-    fs = gcsfs.GCSFileSystem()
-    gcs_loc = os.path.join('gs://',output_dir,'model','embeddings')
-    img_files = [os.path.join('gs://',
-                              output_dir,
-                              i.split('/')[-3],
-                              i.split('/')[-2],i.split('/')[-1])
-                 for i in img_files]
-    pd.DataFrame(img_files, columns=['img_loc']).to_csv(os.path.join(gcs_loc,'img_list.csv'),index=False)
-    with fs.open(os.path.join(gcs_loc,'embeddings.npy'),'wb') as f:
-        np.save(f,image_embeddings)
-    return gcs_loc
 
 def save_embeddings(img_files,image_embeddings,output_dir):
     fs = gcsfs.GCSFileSystem()
-    gcs_loc = os.path.join('gs://',output_dir,'model','embeddings')
+    gcs_loc = os.path.join('gs://', output_dir , 'model', 'embeddings')
     img_files = [os.path.join('gs://',
                               output_dir,
                               i.split('/')[-3],
-                              i.split('/')[-2],i.split('/')[-1])
+                              i.split('/')[-2],
+                              i.split('/')[-1])
                  for i in img_files]
     pd.DataFrame(img_files, columns=['img_loc']).to_csv(os.path.join(gcs_loc,'img_list.csv'),index=False)
     with fs.open(os.path.join(gcs_loc,'embeddings.npy'),'wb') as f:

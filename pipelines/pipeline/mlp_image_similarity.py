@@ -19,7 +19,6 @@ def unzip_train_deploy(project,bucket_in,file_path,bucket_out,mode):
         ],
         file_outputs={'bucket':'/output.txt'}
     )
-    unzip_and_upload.execution_options.caching_strategy.max_cache_staleness = "P30D"
 
     train = dsl.ContainerOp(
         name='Train Model',
@@ -29,8 +28,14 @@ def unzip_train_deploy(project,bucket_in,file_path,bucket_out,mode):
         ],
         file_outputs={'bucket':'/output.txt'}
     )
-    train.set_memory_request('5G')
-    train.set_cpu_request('2')
-    train.execution_options.caching_strategy.max_cache_staleness = "P30D"
+
+    deploy = dsl.ContainerOp(
+        name='Deploy App',
+        image='us.gcr.io/opportune-baton-267215/app-deploy',
+        arguments=[
+            train.outputs['bucket']
+        ],
+        file_outputs={'app_url':'/output.txt'}
+    )
 
 Compiler().compile(unzip_train_deploy,'image_similarity.tar.gz')
